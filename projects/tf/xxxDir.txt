@@ -1,0 +1,9 @@
+.ipynb_checkpoints
+__pycache__
+_docker
+web2py
+_temp
+_local
+run
+legacy
+test
