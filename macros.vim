@@ -37,11 +37,11 @@ noremap <Leader>= :spellrepall
 nnoremap <Leader>si :syntax match ignoreblock /^,,.*/ contains=@NoSpell<CR>
 
 " put fields of line in registers, go to right window, open file, and goto pattern
-noremap <Leader>ss mf?^=l"dy$`f0"wyt|f|l"fyt|f|l"py$l:ed/f1G/<Bslash><w<Bslash>>
+noremap <Leader>ss mf?^=<CR>l"dy$`f0"wyt<Bar>f<Bar>l"fyt<Bar>f<Bar>l"py$<CR><C-W>l:e<C-R>d/<C-R>f<CR>1G/<Bslash><<C-R>w<Bslash>><CR>
 
 " put word on current line in register, got to right window, to end, insert
 " new line with that word, save, go back, delete line, save
-noremap <Leader>sg 0"wy$lGow:whdd:w
+noremap <Leader>sg 0"wy$<C-W>lGo<C-R>w<Esc>:w<CR><C-W>hdd:w<CR>
 
 " go to matching brace and then one line down
 
@@ -54,4 +54,4 @@ noremap <Leader>sn %j
 " each member is braced
 " In an ipynb file (json) it goes to the start of the n-th cell!
 
-map <Leader>sm :let @n='%j'1G0:execute 'normal!'.@p.'@n'n
+map <Leader>sm :let<Space>@-='%j'<CR>1G0<CR><CR>:execute<Space>'normal!'.@p.'@-'<CR>n

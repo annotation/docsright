@@ -135,7 +135,7 @@ CMT_RE = re.compile(r"""<!--.*?-->""", re.S)
 INITIALS_RE = re.compile(r"""^[A-Z][a-z]?$""")
 HEX_RE = re.compile(r"""^[a-f0-9]+$""", re.I)
 NUM_PL = re.compile(r"""^[0-9]+s$""", re.I)
-SIZES_RE = re.compile(r"""^[0-9][0-9.]*(?:th|st|nd|rd|x|(?:[KMGTP]B?))$""", re.I)
+SIZES_RE = re.compile(r"""^[0-9][0-9.]*(?:th|st|nd|rd|x|pt|(?:[KMGTP]B?))$""", re.I)
 
 SYM_RE = re.compile(r"""«[a-zA-Z0-9_]*»""")
 
@@ -165,7 +165,10 @@ PARAM_RE = re.compile(
             iterable|
             object|
             mixed |
-            AttrDict
+            void |
+            AttrDict |
+            np\ array |
+            image\ as\ np\ array
         )
     """,
     re.M | re.X,
@@ -210,16 +213,26 @@ DOTNAME_RE = re.compile(
 )
 
 
+ALINK_RE = re.compile(r"""\[[^]]+\]\[[^]]+\]""")
 ILINK_RE = re.compile(r"""!\[[^]]+\]\([^)]+\)""")
 LINK_RE = re.compile(r"""\[([^]]+)\]\([^)]+\)""")
 NLINK_RE = re.compile(r"""https?://[a-z0-9_./-]*""")
+HEADING_RE = re.compile(r"""(?:^|")#+\s+(.*?)\s*(?:$|\\n)""", re.M)
+HEAD_COLON_RE = re.compile(r"""^[ #]*:::\s*.*$""", re.M)
 
-PNAME_RE = re.compile(r"""^[a-zA-Z0-9_.-]+$""")
+PNAME_RE = re.compile(r"""^[a-zA-Z0-9~_.()-]+$""")
 
 
 def linkRepl(match):
     body = match.group(1)
-    return " LINK " if PNAME_RE.match(body) else body
+    result = " LINK " if PNAME_RE.match(body) else body
+    return result
+
+
+def headRepl(match):
+    title = match.group(1)
+    result = " HEAD " if PNAME_RE.match(title) else title
+    return result
 
 
 WORD_RE = re.compile(r"""\w+""")
@@ -294,7 +307,7 @@ class Spell:
             tasks = [x for t in fh if not (x := t.strip()).startswith("#")]
             self.tasks = []
 
-        for (t, task) in enumerate(tasks):
+        for t, task in enumerate(tasks):
             if givenTask is not None and t + 1 != givenTask:
                 continue
 
@@ -367,7 +380,7 @@ class Spell:
         )
         console(sepLine)
 
-        for (i, task) in enumerate(tasks + ["TOTAL"]):
+        for i, task in enumerate(tasks + ["TOTAL"]):
             theseStats = stats[task]
             files = theseStats["files"]
             incoming = theseStats["incoming"]
@@ -506,10 +519,13 @@ class Spell:
             text = "\n".join(dstLines)
             text = CMT_RE.sub(" ", text)
             text = ELEM_DEL1_RE.sub(" ", text)
-            text = ILINK_RE.sub(r" ", text)
+            text = HEAD_COLON_RE.sub(" REFERENCE ", text)
+            text = HEADING_RE.sub(headRepl, text)
+            text = ALINK_RE.sub(r" LINK ", text)
+            text = ILINK_RE.sub(r"LINK ", text)
             text = LINK_RE.sub(linkRepl, text)
-            text = NLINK_RE.sub(r" ", text)
-            text = TTTICK_RE.sub("\n", text)
+            text = NLINK_RE.sub(r" LINK ", text)
+            text = TTTICK_RE.sub("\nCODE\n", text)
             text = MATHD_RE.sub(" MATH ", text)
             text = MATHA_RE.sub(" MATH ", text)
             text = MATH_RE.sub(" MATH ", text)
@@ -599,14 +615,16 @@ class Spell:
     def deliverOccs(self, word, occs, fh):
         lastSrcx = self.lastSrcx
 
-        for (srcx, info) in occs.items():
+        for srcx, info in occs.items():
             if srcx != lastSrcx:
                 fh.write(f"={srcx}\n")
                 lastSrcx = srcx
 
             for fl, names in sorted(info.items()):
-                for name in names:
-                    fh.write(f"{word}|{fl}|{name or 'e'}\n")
+                for name in sorted(names):
+                    fh.write(
+                        f"{word}|{fl}|{str(name) if type(name) is int else (name or 'e')}\n"
+                    )
 
         self.lastSrcx = lastSrcx
 
