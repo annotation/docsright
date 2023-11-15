@@ -37,11 +37,11 @@ noremap <Leader>= :spellrepall
 nnoremap <Leader>si :syntax match ignoreblock /^,,.*/ contains=@NoSpell<CR>
 
 " put fields of line in registers, go to right window, open file, and goto pattern
-noremap <Leader>ss mf?^=<CR>l"dy$`f0"wyt<Bar>f<Bar>l"fyt<Bar>f<Bar>l"py$<CR><C-W>l:e<C-R>d/<C-R>f<CR>1G/<Bslash><<C-R>w<Bslash>><CR>
+noremap <Leader>ss :wa<CR>mf?^=<CR>l"dy$`f0"wyt<Bar>f<Bar>l"fyt<Bar>f<Bar>l"py$<CR><C-W>l:e<C-R>d/<C-R>f<CR>1G/<Bslash><<C-R>w<Bslash>><CR>
 
 " put word on current line in register, got to right window, to end, insert
 " new line with that word, save, go back, delete line, save
-noremap <Leader>sg 0"wy$<C-W>lGo<C-R>w<Esc>:w<CR><C-W>hdd:w<CR>
+noremap <Leader>sg 0"wy$<C-W>lGo<C-R>w<Esc><C-W>hdd:wa<CR>
 
 " go to matching brace and then one line down
 

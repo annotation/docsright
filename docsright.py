@@ -109,6 +109,7 @@ MATH_RE = re.compile(r"""\$[^$\n]+\$""", re.S)
 MATHD_RE = re.compile(r"""\$\$.+?\$\$""", re.S)
 MATHA_RE = re.compile(r"""\\\(.+?\\\)""", re.S)
 BRACES_RE = re.compile(r"""\{\{.+?\}\}""", re.S)
+X_ENTS = re.compile(r"""&(?:lt|gt|amp|quot|apos|nbsp);""")
 
 OLD_TTICK_RE = re.compile(
     r"""
@@ -135,7 +136,27 @@ CMT_RE = re.compile(r"""<!--.*?-->""", re.S)
 INITIALS_RE = re.compile(r"""^[A-Z][a-z]?$""")
 HEX_RE = re.compile(r"""^[a-f0-9]+$""", re.I)
 NUM_PL = re.compile(r"""^[0-9]+s$""", re.I)
-SIZES_RE = re.compile(r"""^[0-9][0-9.]*(?:th|st|nd|rd|x|pt|(?:[KMGTP]B?))$""", re.I)
+SIZES_RE = re.compile(
+    r"""
+    ^
+    [0-9][0-9.]*
+    (?:
+        x
+        [0-9]*
+    )?
+    (?:
+        th|
+        st|
+        nd|
+        rd|
+        pt|
+        ppi|
+        (?:
+            [KMGTP]B?
+        )
+    )?
+    $
+    """, re.I | re.X)
 
 SYM_RE = re.compile(r"""«[a-zA-Z0-9_]*»""")
 
@@ -386,7 +407,7 @@ class Spell:
             incoming = theseStats["incoming"]
             filtered = theseStats["filtered"]
 
-            all = 0
+            total = 0
             wrongs = 0
             locations = 0
 
@@ -400,7 +421,7 @@ class Spell:
                 if not isTotal and task not in info:
                     continue
 
-                all += 1
+                total += 1
 
                 if word in wrong:
                     wrongs += 1
@@ -413,7 +434,7 @@ class Spell:
             iRep = "" if isTotal else (i + 1)
             console(
                 f"{iRep:>3} | {task:<40} | {files:>5} | {incoming:>6} | {filtered:>6} "
-                f"| {all:>5} | {wrongs:>5} | {locations:>6}"
+                f"| {total:>5} | {wrongs:>5} | {locations:>6}"
             )
 
         if len(messages):
@@ -454,7 +475,14 @@ class Spell:
                 chunks[""] = dstLines
 
             if isIpynb:
-                notebook = nbRead(fh, NO_CONVERT)
+                try:
+                    notebook = nbRead(fh, NO_CONVERT)
+                except Exception as e:
+                    messages.setdefault(srcx, []).append(
+                        f"{srcFile}: reading problem: {str(e)}"
+                    )
+                    return (0, 0)
+
                 cells = notebook["cells"]
 
                 for cellNr, cell in enumerate(cells):
@@ -530,6 +558,7 @@ class Spell:
             text = MATHA_RE.sub(" MATH ", text)
             text = MATH_RE.sub(" MATH ", text)
             text = BRACES_RE.sub(" VAR ", text)
+            text = X_ENTS.sub("", text)
 
             good = True
 
